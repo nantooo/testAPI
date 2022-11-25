@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 
 fun responseAlignment(headers: Map<String, String>):String{
     var response : String =""
@@ -16,9 +18,10 @@ fun responseAlignment(headers: Map<String, String>):String{
             response += "${entry.key} : ${entry.value}<br>";
         }
     return response
-    }
+}
+
 @RestController
-@RequestMapping("/")
+@RequestMapping("/alb/")
 class MessageResource {
     @GetMapping
     fun index(): String{
@@ -28,15 +31,20 @@ class MessageResource {
     @GetMapping("/listHeaders")
     fun listAllHeaders(@RequestHeader headers: Map<String, String>): ResponseEntity<String> {
         println(headers)
-        return ResponseEntity.ok().body(responseAlignment(headers))
+        val responseHeaders = HttpHeaders()
+        responseHeaders.vary = listOf("User-Agent","Accept-Encoding")
+        responseHeaders.contentType = MediaType.TEXT_HTML
+        return ResponseEntity.ok().headers(responseHeaders).body(responseAlignment(headers))
         }
         
     @GetMapping("/listHeaders/{httpCode}")
     fun headerWithStatus(
-        @RequestHeader headers: Map<String, String>,
+        @RequestHeader requestHeaders: Map<String, String>,
         @PathVariable httpCode: Int,
         ): ResponseEntity<String> {
-        return ResponseEntity.status(httpCode).body("<h2>Status Code=" + httpCode.toString() + "</h2><br>"+responseAlignment(headers))
+        val responseHeaders = HttpHeaders()
+        responseHeaders.contentType = MediaType.TEXT_HTML
+        return ResponseEntity.status(httpCode).headers(responseHeaders).body("<h2>Status Code=" + httpCode.toString() + "</h2><br>"+responseAlignment(requestHeaders))
         }
     
     @GetMapping("/listHeaders/{httpCode}/delay/{duration}")
@@ -46,7 +54,9 @@ class MessageResource {
         @PathVariable duration: Long,
         ): ResponseEntity<String> {
         Thread.sleep(duration)
-        return ResponseEntity.status(httpCode).body("<h1>Status Code=" + httpCode.toString() + "</h1><br>" + "<h2>delay=" + duration.toString() + "milliseconds</h2><br>" + responseAlignment(headers))
+        val responseHeaders = HttpHeaders()
+        responseHeaders.contentType = MediaType.TEXT_HTML
+        return ResponseEntity.status(httpCode).headers(responseHeaders).body("<h1>Status Code=" + httpCode.toString() + "</h1><br>" + "<h2>delay=" + duration.toString() + "milliseconds</h2><br>" + responseAlignment(headers))
     
         }
     
@@ -56,7 +66,9 @@ class MessageResource {
         @PathVariable duration: Long,
         ): ResponseEntity<String> {
         Thread.sleep(duration)
-        return ResponseEntity.ok().body("<h1>delay=" + duration.toString() + "milliseconds</h1><br>" + responseAlignment(headers))
+        val responseHeaders = HttpHeaders()
+        responseHeaders.contentType = MediaType.TEXT_HTML
+        return ResponseEntity.ok().headers(responseHeaders).body("<h1>delay=" + duration.toString() + "milliseconds</h1><br>" + responseAlignment(headers))
         }
 
 }
